@@ -23,7 +23,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ngconf.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ngnrouterlib\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="sample.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ngnrouterlib\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
