@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -u
 import sys
 import os
-import ptvsd
-import pexpect
+import ptvsd # 追加ライブラリ
+import pexpect # 追加ライブラリ
 import time
 import ngnrouterlib
 

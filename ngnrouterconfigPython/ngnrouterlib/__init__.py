@@ -3,7 +3,26 @@ import os
 import sys
 import re
 from time import sleep
-import pexpect
+import pexpect # 追加ライブラリ
+import jinja2 # 追加ライブラリ
+
+def expandTemplate(dict, templatedir, outputdir):
+    '''
+    expandTemplate
+        templatedir にあるテンプレートファイルについて、
+        dict をパラメータとして展開したファイルを
+        outputdir に生成する
+    '''
+    templateLoader = jinja2.FileSystemLoader(searchpath=templatedir)
+    templateEnv = jinja2.Environment(loader=templateLoader)
+    for templateFilename in templateEnv.list_templates():
+        outputpath = os.path.join(outputdir ,dict["id"] + "_" + templateFilename)
+        template = templateEnv.get_template(templateFilename)
+        outputText = template.render(dict)
+        with open(outputpath, "w") as fp:
+            fp.write(outputText)
+
+
 
 def readrouterconfig(filename):
 	'''
