@@ -30,7 +30,7 @@ if (sheet.nrows <= 1):
     print("2行以上あるファイルを指定して下さい")
     exit(1)
 
-headerline = [(idx, str(cell.value)) for idx,cell in enumerate(sheet.row(0)) if cell.value.strip()]
+headerline = [(idx, str(cell.value).strip()) for idx,cell in enumerate(sheet.row(0)) if cell.value.strip()]
 
 # ヘッダの重複調査
 headerCnt = collections.Counter([header for idx,header in headerline])

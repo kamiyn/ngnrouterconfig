@@ -20,7 +20,7 @@ def expandTemplate(dict, templatedir, outputdir):
         template = templateEnv.get_template(templateFilename)
         outputText = template.render(dict)
         with open(outputpath, "w") as fp:
-            fp.write(outputText)
+                fp.write(outputText)
 
 
 
