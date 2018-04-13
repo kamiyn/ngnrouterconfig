@@ -42,6 +42,17 @@ def readrouterconfig(filename):
 				jsonobj[k] = os.getenv(v[1::])
 		return (jsonobj, sendlines)
 
+class multifile(object):
+	def __init__(self, files):
+		self._files = files
+	def __getattr__(self, attr, *args):
+		return self._wrap(attr, *args)
+	def _wrap(self, attr, *args):
+		def g(*a, **kw):
+			for f in self._files:
+				res = getattr(f, attr, *args)(*a, **kw)
+			return res
+		return g
 
 def ix_telnet_login(routerconfig, sendlines, logfilename):
 	'''
@@ -53,10 +64,10 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
 	'''
 	sleepspan = 0.5
 	timeout = 5
-	logfp = open(logfilename, 'wb')
+	# logfp = open(logfilename, 'wb')
+	logfp = multifile([ sys.stdout.buffer, open(logfilename, 'wb') ])
 	child = pexpect.spawn('telnet ' +  routerconfig["centerrouter"])
 	child.logfile_read = logfp
-	# child.logfile_read = sys.stderr.buffer # .buffer をつけるとバイナリ出力先になる
 	try:
 		# center router login
 		child.expect('login: ', timeout=timeout)
@@ -119,11 +130,6 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
 		logfp.close()
 		child.close()
 
-		logfp = open(logfilename, 'r')
-		for line in logfp.readlines():
-			print(line, end="")
-		print("")
-		print("")
 
 def rtx_ssh_login(routerconfig, sendlines, logfilename):
 	'''
@@ -135,10 +141,12 @@ def rtx_ssh_login(routerconfig, sendlines, logfilename):
 	'''
 	sleepspan = 0.5
 	timeout = 5
-	logfp = open(logfilename, 'wb')
+
+
+	# logfp = open(logfilename, 'wb')
+	logfp = multifile([ sys.stdout.buffer, open(logfilename, 'wb') ])
 	child = pexpect.spawn('ssh -l ' +  routerconfig["username"] + " " + routerconfig["router"])
 	child.logfile_read = logfp
-	# child.logfile_read = sys.stderr.buffer # .buffer をつけるとバイナリ出力先になる
 	try:
 		# ユーザーログイン
 		child.expect('password: ', timeout=timeout)
@@ -185,7 +193,3 @@ def rtx_ssh_login(routerconfig, sendlines, logfilename):
 		logfp.flush()
 		logfp.close()
 		child.close()
-
-		logfp = open(logfilename, 'r')
-		for line in logfp.readlines():
-			print(line, end="")
