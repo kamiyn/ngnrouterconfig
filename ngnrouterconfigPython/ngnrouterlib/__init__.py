@@ -36,13 +36,16 @@ def expandTemplate(dict, templatedir, outputdir):
     '''
     templateLoader = jinja2.FileSystemLoader(searchpath=templatedir)
     templateEnv = jinja2.Environment(loader=templateLoader)
-    for templateFilename in templateEnv.list_templates():
+    result = []
+    for templateFilename in [x for x in templateEnv.list_templates() if x.find("/") == -1]:
         outputpath = os.path.join(
             outputdir, dict["id"] + "_" + templateFilename)
         template = templateEnv.get_template(templateFilename)
         outputText = template.render(dict)
         with open(outputpath, "w") as fp:
             fp.write(outputText)
+        result.append(outputpath)
+    return result
 
 
 def readrouterconfig(filename):
@@ -62,6 +65,16 @@ def readrouterconfig(filename):
             if (v.startswith("$") and os.getenv(v[1::])):
                 jsonobj[k] = os.getenv(v[1::])
         return (jsonobj, sendlines)
+
+
+def checkre(pfile, tfile):
+    f = open(pfile)
+    patternStr = f.readline().strip()
+    f.close()
+    f2 = open(tfile)
+    targetStr = f2.read()
+    f2.close()
+    return re.search(patternStr, targetStr, re.DOTALL)
 
 
 class multifile(object):

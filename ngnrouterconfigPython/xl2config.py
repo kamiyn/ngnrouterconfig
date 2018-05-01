@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import xlrd # 追加ライブラリ
+import re
 import ngnrouterlib
 
 if len(sys.argv) < 3:
@@ -48,7 +49,9 @@ if not [header for idx,header in headerline if header == "id"]:
 
 for line in range(1, sheet.nrows):
     row = sheet.row_values(line)
-    dict = {headertuple[1]:str(row[headertuple[0]]) for headertuple in headerline} # パラメータ辞書作成
-    ngnrouterlib.expandTemplate(dict, templatedir, outputdir)
+    dict = {headertuple[1]:str(row[headertuple[0]]).strip() for headertuple in headerline} # パラメータ辞書作成
+    dict.update({headertuple[1]+"escape":re.escape(str(row[headertuple[0]]).strip()) for headertuple in headerline}) # パラメータ辞書作成(正規表現 escape用)
+    outputfiles = ngnrouterlib.expandTemplate(dict, templatedir, outputdir)
+    print(outputfiles)
 
 exit(0)
