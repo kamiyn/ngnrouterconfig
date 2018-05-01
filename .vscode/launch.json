@@ -8,11 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
-            "args": [
-                "/Users/h/work/ngnwork/RouterConfigSample.xlsx",
-                "/Users/h/work/ngnwork/configtemplate/"
-            ]
+            "program": "${file}"
         },
         {
             "name": "Python: Attach",
