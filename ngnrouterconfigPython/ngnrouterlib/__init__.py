@@ -6,7 +6,7 @@ from time import sleep
 import time
 import pexpect  # 追加ライブラリ
 import jinja2  # 追加ライブラリ
-
+from termcolor import colored, cprint # 追加ライブラリ
 
 def doNgconf(filename):
     # config の中身を解析する
@@ -38,21 +38,27 @@ class ConfigHolder(object):
 
     def confirmToRun(self):
         with open(self.configFile) as f1:
-            print("========投入 " + self.configFile)
+            print(colored("========投入 " + self.configFile, 'cyan'))
             print(f1.read())
         for r in self.regexFile:
             with open(r) as f2:
-                print("========検証 " + r)
+                print(colored("========検証 " + r, 'cyan'))
                 print(f2.read())
 
-        input("実行するには Enter を押して下さい")
+        input(colored("実行するには Enter を押して下さい", 'cyan'))
         return True
 
     def Run(self):
         logfilename = doNgconf(self.configFile)
         for r in self.regexFile:
+            with open(r) as f2:
+                print(colored("\n========検証 " + r, 'cyan'))
+                print(f2.read())
             if not checkre(r, logfilename):
-                raise Exception("検証に失敗しました")
+                print(colored("XXXXXXXX検証に失敗しました " + r + "\n", 'red'))
+                raise Exception()
+            else:
+                print(colored("========検証に成功しました " + r + "\n", 'green'))
 
     @staticmethod
     def appendFile(filename, result):
@@ -140,8 +146,8 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
     '''
     sleepspan = 0.5
     timeout = 5
-    # logfp = open(logfilename, 'wb')
-    logfp = multifile([sys.stdout.buffer, open(logfilename, 'wb')])
+    logfp1 = open(logfilename, 'wb')
+    logfp = multifile([sys.stdout.buffer, logfp1])
     child = pexpect.spawn('telnet ' + routerconfig["centerrouter"])
     child.logfile_read = logfp
     try:
@@ -204,7 +210,7 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
         sleep(sleepspan)
     finally:
         logfp.flush()
-        logfp.close()
+        logfp1.close() # stdout は close したくない
         child.close()
 
 
@@ -218,8 +224,8 @@ def ix_direct_login(routerconfig, sendlines, logfilename):
     '''
     sleepspan = 0.5
     timeout = 5
-    # logfp = open(logfilename, 'wb')
-    logfp = multifile([sys.stdout.buffer, open(logfilename, 'wb')])
+    logfp1 = open(logfilename, 'wb')
+    logfp = multifile([sys.stdout.buffer, logfp1])
     child = pexpect.spawn('telnet ' + routerconfig["router"])
     child.logfile_read = logfp
     try:
@@ -271,7 +277,7 @@ def ix_direct_login(routerconfig, sendlines, logfilename):
         sleep(sleepspan)
     finally:
         logfp.flush()
-        logfp.close()
+        logfp1.close() # stdout は close したくない
         child.close()
 
 
@@ -286,8 +292,8 @@ def rtx_ssh_login(routerconfig, sendlines, logfilename):
     sleepspan = 0.5
     timeout = 5
 
-    # logfp = open(logfilename, 'wb')
-    logfp = multifile([sys.stdout.buffer, open(logfilename, 'wb')])
+    logfp1 = open(logfilename, 'wb')
+    logfp = multifile([sys.stdout.buffer, logfp1])
     child = pexpect.spawn('ssh -l ' + routerconfig["username"] + " " + routerconfig["router"])
     child.logfile_read = logfp
     try:
@@ -335,5 +341,5 @@ def rtx_ssh_login(routerconfig, sendlines, logfilename):
         sleep(sleepspan)
     finally:
         logfp.flush()
-        logfp.close()
+        logfp1.close() # stdout は close したくない
         child.close()
