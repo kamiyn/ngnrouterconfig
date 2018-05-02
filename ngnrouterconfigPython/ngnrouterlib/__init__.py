@@ -32,9 +32,10 @@ class ConfigHolder(object):
         self.configFile = ""
         self.outputFile = ""
         self.regexFile = []
+        self.renotFile = []
 
     def __str__(self):
-        return "configFile: " + self.configFile + "\tregexFile: " + ",".join(self.regexFile)
+        return "configFile: " + self.configFile + "\tregexFile: " + ",".join(self.regexFile) + "\trenotFile: " + ",".join(self.renotFile)
 
     def confirmToRun(self):
         with open(self.configFile) as f1:
@@ -43,6 +44,10 @@ class ConfigHolder(object):
         for r in self.regexFile:
             with open(r) as f2:
                 print(colored("========検証 " + r, 'cyan'))
+                print(f2.read())
+        for r in self.renotFile:
+            with open(r) as f2:
+                print(colored("\n========存在しない検証 " + r, 'cyan'))
                 print(f2.read())
 
         input(colored("実行するには Enter を押して下さい", 'cyan'))
@@ -59,12 +64,23 @@ class ConfigHolder(object):
                 raise Exception()
             else:
                 print(colored("========検証に成功しました " + r + "\n", 'green'))
+        for r in self.renotFile:
+            with open(r) as f2:
+                print(colored("\n========存在しない検証 " + r, 'cyan'))
+                print(f2.read())
+            if checkre(r, logfilename):
+                print(colored("XXXXXXXX検証に失敗しました " + r + "\n", 'red'))
+                raise Exception()
+            else:
+                print(colored("========検証に成功しました " + r + "\n", 'green'))
 
     @staticmethod
     def appendFile(filename, result):
         resultlen = len(result)
         if filename.endswith(".re"):
             result[resultlen-1].regexFile.append(filename)
+        elif filename.endswith(".nre"):
+            result[resultlen-1].renotFile.append(filename)
         else:
             holder = ConfigHolder()
             holder.configFile = filename
