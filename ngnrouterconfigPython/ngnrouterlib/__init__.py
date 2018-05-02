@@ -25,6 +25,7 @@ def doNgconf(filename):
         ix_direct_login(routerconfig, sendlines, logfilename)
     else:
         print("unknown routertype: " + routerconfig["routertype"])
+    return logfilename
 
 class ConfigHolder(object):
     def __init__(self):
@@ -34,6 +35,24 @@ class ConfigHolder(object):
 
     def __str__(self):
         return "configFile: " + self.configFile + "\tregexFile: " + ",".join(self.regexFile)
+
+    def confirmToRun(self):
+        with open(self.configFile) as f1:
+            print("========投入 " + self.configFile)
+            print(f1.read())
+        for r in self.regexFile:
+            with open(r) as f2:
+                print("========検証 " + r)
+                print(f2.read())
+
+        input("実行するには Enter を押して下さい")
+        return True
+
+    def Run(self):
+        logfilename = doNgconf(self.configFile)
+        for r in self.regexFile:
+            if not checkre(r, logfilename):
+                raise Exception("検証に失敗しました")
 
     @staticmethod
     def appendFile(filename, result):
@@ -89,12 +108,10 @@ def readrouterconfig(filename):
 
 
 def checkre(pfile, tfile):
-    f = open(pfile)
-    patternStr = f.readline().strip()
-    f.close()
-    f2 = open(tfile)
-    targetStr = f2.read()
-    f2.close()
+    with open(pfile) as f:
+        patternStr = f.readline().strip()
+    with open(tfile) as f2:
+        targetStr = f2.read()
     return re.search(patternStr, targetStr, re.DOTALL)
 
 
