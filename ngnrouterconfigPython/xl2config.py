@@ -52,6 +52,6 @@ for line in range(1, sheet.nrows):
     dict = {headertuple[1]:str(row[headertuple[0]]).strip() for headertuple in headerline} # パラメータ辞書作成
     dict.update({headertuple[1]+"escape":re.escape(str(row[headertuple[0]]).strip()) for headertuple in headerline}) # パラメータ辞書作成(正規表現 escape用)
     outputfiles = ngnrouterlib.expandTemplate(dict, templatedir, outputdir)
-    print(outputfiles)
+    print([str(x) for x in outputfiles])
 
 exit(0)

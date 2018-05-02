@@ -26,6 +26,25 @@ def doNgconf(filename):
     else:
         print("unknown routertype: " + routerconfig["routertype"])
 
+class ConfigHolder(object):
+    def __init__(self):
+        self.configFile = ""
+        self.outputFile = ""
+        self.regexFile = []
+
+    def __str__(self):
+        return "configFile: " + self.configFile + "\tregexFile: " + ",".join(self.regexFile)
+
+    @staticmethod
+    def appendFile(filename, result):
+        resultlen = len(result)
+        if filename.endswith(".re"):
+            result[resultlen-1].regexFile.append(filename)
+        else:
+            holder = ConfigHolder()
+            holder.configFile = filename
+            result.append(holder)
+        return result
 
 def expandTemplate(dict, templatedir, outputdir):
     '''
@@ -40,11 +59,13 @@ def expandTemplate(dict, templatedir, outputdir):
     for templateFilename in [x for x in templateEnv.list_templates() if x.find("/") == -1]:
         outputpath = os.path.join(
             outputdir, dict["id"] + "_" + templateFilename)
+        print(templateFilename)
         template = templateEnv.get_template(templateFilename)
         outputText = template.render(dict)
         with open(outputpath, "w") as fp:
             fp.write(outputText)
-        result.append(outputpath)
+        # result.append(outputpath)
+        result = ConfigHolder.appendFile(outputpath, result)
     return result
 
 
