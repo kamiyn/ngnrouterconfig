@@ -11,6 +11,7 @@ import sys
 import time
 import xlrd # 追加ライブラリ
 import re
+from termcolor import colored, cprint # 追加ライブラリ
 import ngnrouterlib
 
 if len(sys.argv) < 3:
@@ -48,12 +49,18 @@ if not [header for idx,header in headerline if header == "id"]:
 # /ヘッダの重複調査
 
 for line in range(1, sheet.nrows):
+    print(colored("\n--------新しい物件の処理を開始します", 'yellow'))
     row = sheet.row_values(line)
     dict = {headertuple[1]:str(row[headertuple[0]]).strip() for headertuple in headerline} # パラメータ辞書作成
     dict.update({headertuple[1]+"escape":re.escape(str(row[headertuple[0]]).strip()) for headertuple in headerline}) # パラメータ辞書作成(正規表現 escape用)
+    if not dict["id"]:
+        continue
     outputfiles = ngnrouterlib.expandTemplate(dict, templatedir, outputdir)
-    for holder in outputfiles:
-        if holder.confirmToRun():
-            holder.Run()
+    try:
+        for holder in outputfiles:
+            if holder.confirmToRun():
+                holder.Run()
+    except:
+        print("この物件への処理を中断しました")
 
 exit(0)

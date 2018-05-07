@@ -166,6 +166,7 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
     logfp = multifile([sys.stdout.buffer, logfp1])
     child = pexpect.spawn('telnet ' + routerconfig["centerrouter"])
     child.logfile_read = logfp
+    child.ignore_sighup = True
     try:
         # center router login
         child.expect('login: ', timeout=timeout)
@@ -213,6 +214,11 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
                 continue
             sleep(sleepspan)
             child.send(line + "\r")
+            if (line.startswith("reload y")): # リロードはプロンプトを出力せず、先に進めない
+                print(colored("========reload しています。ルータの起動を待って下さい ", 'yellow'))
+                sleep(sleepspan * 10)
+                return
+
             child.expect(prom)  # 標準のタイムアウト 30秒を利用する
 
         sleep(sleepspan)
