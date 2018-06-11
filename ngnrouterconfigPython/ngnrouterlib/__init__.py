@@ -18,7 +18,7 @@ def doNgconf(filename):
     if routerconfig["routertype"] == "rtx-ssh":
         rtx_ssh_login(routerconfig, sendlines, logfilename)
     elif routerconfig["routertype"] == "rtx-telnet":
-        pass
+        rtx_telnet_login(routerconfig, sendlines, logfilename)
     elif routerconfig["routertype"] == "ix-telnet":
         ix_telnet_login(routerconfig, sendlines, logfilename)
     elif routerconfig["routertype"] == "ix-direct":
@@ -362,6 +362,70 @@ def century_direct_login(routerconfig, sendlines, logfilename):
         child.send('exit' + "\r")
         sleep(sleepspan)
         child.send('exit' + "\r")
+        sleep(sleepspan)
+    finally:
+        logfp.flush()
+        logfp1.close() # stdout は close したくない
+        child.close()
+
+
+def rtx_telnet_login(routerconfig, sendlines, logfilename):
+    '''
+    rtx_telnet_login
+        RTX810, RTX1200 にコンフィグ送信し、送信状態をログファイルに記録する関数
+            ファイルの中身は以下のような内容であるこのを期待している。1行目はJSON、2行目以降は ルータに送信したい内容
+            "router": "10.0.0.1", "routertype": "rtx-telnet", "password": "ログインパスワード", "adminpassword": "管理者パスワード" }
+            show config
+    '''
+    sleepspan = 0.5
+    timeout = 5
+
+    logfp1 = open(logfilename, 'wb')
+    logfp = multifile([sys.stdout.buffer, logfp1])
+    child = pexpect.spawn('telnet ' + routerconfig["router"])
+    child.logfile_read = logfp
+    try:
+        # ユーザーログイン
+        child.expect('Password: ', timeout=timeout)
+        sleep(sleepspan)
+        child.send(routerconfig["password"] + "\n")
+        child.expect('> ', timeout=timeout)
+
+        # プロンプト文字列の取得
+        sleep(sleepspan)
+        # ルータのヘッダー文字列に含まれない文字列をコメント送信することで、ヘッダーをスキップする
+        child.send("# non-existent-lines\n")
+        child.expect('non-existent-lines', timeout=timeout)  # この時点では改行コードを含まない
+        prom = ""
+        prom1 = ""
+        while (prom1 != ">"):
+            prom = prom + prom1
+            c = child.read(1)
+            prom1 = chr(c[0])
+
+        # 管理者モードに変更
+        sleep(sleepspan)
+        child.send('administrator' + "\n")
+        child.expect('Password: ', timeout=timeout)
+
+        sleep(sleepspan)
+        child.send(routerconfig["adminpassword"] + "\n")
+        child.expect(prom, timeout=timeout)
+
+        # config を送信する
+        for line in sendlines:
+            if (re.match(r"^\s*$", line)):
+                continue
+            sleep(sleepspan)
+            child.send(line + "\n")
+            child.expect(prom)  # 標準のタイムアウト 30秒を利用する
+
+        sleep(sleepspan)
+        child.send('exit' + "\n")
+        child.expect(prom + '> ', timeout=timeout)
+
+        sleep(sleepspan)
+        child.send('exit' + "\n")
         sleep(sleepspan)
     finally:
         logfp.flush()
