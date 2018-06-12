@@ -341,6 +341,7 @@ def century_direct_login(routerconfig, sendlines, logfilename):
             c = child.read(1)
             prom1 = chr(c[0])
 
+        prom = "\n"+ prom.strip() # Centuryはエコーバックの改行コードが \r
         # 管理者モードに変更
         sleep(sleepspan)
         child.send('configure terminal' + "\r")
