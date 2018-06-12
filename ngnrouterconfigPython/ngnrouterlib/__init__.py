@@ -327,7 +327,7 @@ def century_direct_login(routerconfig, sendlines, logfilename):
         child.expect('Password: ', timeout=timeout)
         sleep(sleepspan)
         child.send(routerconfig["password"] + "\r")
-        child.expect('# ', timeout=timeout)
+        child.expect('#', timeout=timeout)
 
         # プロンプト文字列の取得
         sleep(sleepspan)
