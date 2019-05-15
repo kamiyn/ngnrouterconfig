@@ -25,6 +25,8 @@ def doNgconf(filename):
         ix_direct_login(routerconfig, sendlines, logfilename)
     elif routerconfig["routertype"] == "century-direct":
         century_direct_login(routerconfig, sendlines, logfilename)
+    elif routerconfig["routertype"] == "edgecore-telnet":
+        edgecore_telnet_login(routerconfig, sendlines, logfilename)
     else:
         print("unknown routertype: " + routerconfig["routertype"])
     return logfilename
@@ -159,7 +161,7 @@ def ix_telnet_login(routerconfig, sendlines, logfilename):
     ix_telnet_login
         IX にコンフィグ送信し、送信状態をログファイルに記録する関数
             ファイルの中身は以下のような内容であるこのを期待している。1行目はJSON、2行目以降は ルータに送信したい内容
-            "router": "10.0.0.1", "routertype": "ix_telnet_login", "username": "ログインユーザー名", "password": "ログインパスワード", "centerrouter":"", "centeruser":"", "centerpassword":"" }
+            "router": "10.0.0.1", "routertype": "ix_telnet", "username": "ログインユーザー名", "password": "ログインパスワード", "centerrouter":"", "centeruser":"", "centerpassword":"" }
             show config
     '''
     sleepspan = 0.5
@@ -243,7 +245,7 @@ def ix_direct_login(routerconfig, sendlines, logfilename):
     ix_direct_login
         IX にコンフィグ送信し、送信状態をログファイルに記録する関数 (ルーターを中継しない)
             ファイルの中身は以下のような内容であるこのを期待している。1行目はJSON、2行目以降は ルータに送信したい内容
-            "router": "10.0.0.1", "routertype": "ix_direct_login", "username": "ログインユーザー名", "password": "ログインパスワード" }
+            "router": "10.0.0.1", "routertype": "ix_direct", "username": "ログインユーザー名", "password": "ログインパスワード" }
             show config
     '''
     sleepspan = 0.5
@@ -310,7 +312,7 @@ def century_direct_login(routerconfig, sendlines, logfilename):
     century_direct_login
         Century にコンフィグ送信し、送信状態をログファイルに記録する関数 (ルーターを中継しない)
             ファイルの中身は以下のような内容であるこのを期待している。1行目はJSON、2行目以降は ルータに送信したい内容
-            "router": "10.0.0.1", "routertype": "century_direct_login", "username": "ログインユーザー名", "password": "ログインパスワード" }
+            "router": "10.0.0.1", "routertype": "century_direct", "username": "ログインユーザー名", "password": "ログインパスワード" }
             show config
     '''
     sleepspan = 0.5
@@ -498,5 +500,66 @@ def rtx_ssh_login(routerconfig, sendlines, logfilename):
         sleep(sleepspan)
     finally:
         logfp.flush()
+        logfp1.close() # stdout は close したくない
+        child.close()
+
+
+def edgecore_telnet_login(routerconfig, sendlines, logfilename):
+    '''
+    edgecore_telnet_login
+        Edge-Core にコンフィグ送信し、送信状態をログファイルに記録する関数
+            ファイルの中身は以下のような内容であるこのを期待している。1行目はJSON、2行目以降は ルータに送信したい内容
+            "router": "10.0.0.1", "routertype": "edgecore_telnet", "username": "ログインユーザー名", "password": "ログインパスワード" }
+            show config
+    '''
+    sleepspan = 0.5
+    timeout = 5
+    logfp1 = open(logfilename, 'wb')
+    logfp = multifile([sys.stdout.buffer, logfp1])
+    child = pexpect.spawn('telnet ' + routerconfig["router"])
+    child.logfile_read = logfp
+    try:
+        # ユーザーログイン
+        child.expect('Username: ', timeout=timeout)
+        sleep(sleepspan)
+        child.send(routerconfig["username"] + "\r")
+        child.expect('Password: ', timeout=timeout)
+        sleep(sleepspan)
+        child.send(routerconfig["password"] + "\r")
+        child.expect('#', timeout=timeout)
+
+        # プロンプト文字列の取得 と terminal length 0 を同時に実施する
+        sleep(sleepspan)
+        child.send("terminal length 0\r")
+        child.expect('terminal length 0', timeout=timeout)  # この時点では改行コードを含まない
+        prom = ""
+        prom1 = ""
+        while (prom1 != "#"):
+            prom = prom + prom1
+            c = child.read(1)
+            prom1 = chr(c[0])
+
+        prom = "\n"+ prom.strip()
+
+        # config を送信する
+        for line in sendlines:
+            if (re.match(r"^\s*$", line)):
+                continue
+            sleep(sleepspan)
+            child.send(line + "\r")
+            if (re.match(r"^copy running-config startup-config", line)):
+                child.expect("]:")
+                child.send("\r")
+            child.expect(prom)  # 標準のタイムアウト 30秒を利用する
+
+        sleep(timeout)
+        child.send('exit' + "\r")
+        try:
+            child.expect(prom, timeout=timeout)
+        except pexpect.EOF as ex:
+            print("この物件への処理が完了しました")
+    finally:
+        logfp.flush()
+        sys.stdout.buffer.flush()
         logfp1.close() # stdout は close したくない
         child.close()

@@ -60,7 +60,7 @@ for line in range(1, sheet.nrows):
         for holder in outputfiles:
             if holder.confirmToRun():
                 holder.Run()
-    except:
-        print("この物件への処理を中断しました")
+    except Exception as ex:
+        print("この物件への処理を中断しました ", ex)
 
 exit(0)
